@@ -8,4 +8,20 @@ Esta basada sobre la red ethereum y tambien la red p2p de IPFS para guardar los 
 
 Se utilizan los contratos en Solidity de EthDoc y el estandar de ERC725 de identificacion y claims para poder guardar los documentos de los refugiados dentro de la carpeta de contracts.
 
-La forma en que funciona es, se crea un wallet dentro de la blockchain permisionada para el refugiado, este envia una imagen hacia el endpoint de documentos en base 64, se guarda la imagen, se crea un registro en la blockchain del mismo, se guarda la imagen en el nodo de IPFS, se genera un claim del documento enviado usando la llave privada del wallet del refugiado anteriormente creada por el mismo refugiado y este claim puede ser despues reclamado por un tercero, debidamente registrado en la plataforma y asegurado su identidad, una vez que a traves de su llave publica de su wallet, se valida el claim y se intercambia las llaves para que la autoridad o tercero pueda accesar al documento. 
+La forma en que funciona es, se crea un wallet dentro de la blockchain permisionada para el refugiado, este envia una imagen hacia el endpoint de documentos en base 64, se guarda la imagen, se crea un registro en la blockchain del mismo, se guarda la imagen en el nodo de IPFS, se genera un claim del documento enviado usando la llave privada del wallet del refugiado anteriormente creada por el mismo refugiado y este claim puede ser despues reclamado por un tercero, debidamente registrado en la plataforma y asegurado su identidad, una vez que a traves de su llave publica de su wallet, se valida el claim y se intercambia las llaves para que la autoridad o tercero pueda accesar al documento.
+
+### Prerequisitos
+
+Java JDK 1.8
+Maven
+
+Ethereum blockchain permisionada.
+IPFS nodo privado.
+
+## Instruciones
+
+Para poder compilar el proyecto se utiliza maven, en linea de comando se ejecuta lo sigiente
+
+```
+mvn clean compile assembly:single
+```
