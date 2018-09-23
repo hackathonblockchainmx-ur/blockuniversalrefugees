@@ -56,9 +56,9 @@ public class Main implements Callable<Void> {
 	// coinbase password
 	public static String COINBASE_PASSWORD_CLOUD = "paloit2018";
 	// document manager contract address
-	public static String ETHDOC_CONTRACT_ADDRESS_CLOUD = "0xfc5fc89fc267272ebd36403c07c61f2e979fcb41";
+	public static String ETHDOC_CONTRACT_ADDRESS_CLOUD = "0x0193fd94f75b524bdc09b04b1a3ca533bbf29030";
 	// claims erc725 contract address
-	public static String ERC725_CONTRACT_ADDRESS_CLOUD = "0x632b9b0ef551742a17f111f58982631449e58670";
+	public static String ERC725_CONTRACT_ADDRESS_CLOUD = "0x1c886233a096a6ab3332182f14272172613ddf98";
 
 	@Override
 	public Void call() throws Exception {

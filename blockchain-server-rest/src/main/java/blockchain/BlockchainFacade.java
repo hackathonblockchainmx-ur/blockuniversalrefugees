@@ -19,6 +19,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import org.web3j.crypto.Credentials;
+import org.web3j.crypto.Hash;
 import org.web3j.crypto.RawTransaction;
 import org.web3j.crypto.TransactionEncoder;
 import org.web3j.crypto.WalletUtils;
@@ -33,6 +34,7 @@ import org.web3j.protocol.core.methods.response.EthSendTransaction;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.tuples.generated.Tuple4;
+import org.web3j.tuples.generated.Tuple6;
 import org.web3j.utils.Convert;
 import org.web3j.utils.Numeric;
 
@@ -55,7 +57,7 @@ public class BlockchainFacade {
 	public static final String BLOCKCHAIN_NETWORK_URL = "http://" + Main.IP_ADDRESS + ":7100";/* 8545 */
 	public static final BigInteger NOVAHEMJO_GAS_PRICE = BigInteger.valueOf(27000/* 21000 */);
 	public static final BigInteger NOVAHEMJO_GAS_LIMIT = BigInteger.valueOf(3000000);
-	public static final BigInteger NOVAHEMJO_ASSIGNED_ETHER_NEW_WALLET = new BigInteger("1000000000000000000");// 1
+	public static final BigInteger NOVAHEMJO_ASSIGNED_ETHER_NEW_WALLET = new BigInteger("7000000000000000000");// 7
 																												// ETHER
 																												// in
 																												// WEIs
@@ -294,17 +296,33 @@ public class BlockchainFacade {
 				try {
 					final Novahemjo novahemjo = Novahemjo.load(Main.ERC725_CONTRACT_ADDRESS_CLOUD, web3j, credentials,
 							NOVAHEMJO_GAS_PRICE, NOVAHEMJO_GAS_LIMIT);
-					byte[] _claim = ipfsHashId.getBytes();// data to store
-					byte[] _signature = new String(ownerWalletAddress + BigInteger.ZERO.toString() + new String(_claim))
-							.getBytes(); // this.address + topic + data
-					TransactionReceipt claimAddedTxReceipt = novahemjo
+					LOGGER.log(Level.INFO, "contract address - " + novahemjo.getContractAddress());
+					LOGGER.log(Level.INFO, (novahemjo.isValid()) ? "valid" : "invalid");
+					// add key signature...
+					final String signature = Hash.sha3(ownerWalletAddress);
+					final TransactionReceipt addedKeyTxReceipt = novahemjo.addKey(signature, BigInteger.ZERO).send();
+					LOGGER.log(Level.INFO, "refuge key is " + ((addedKeyTxReceipt.isStatusOK()) ? "ok" : "not ok"));
+					if (!addedKeyTxReceipt.isStatusOK()) {
+						LOGGER.log(Level.SEVERE, "failed creating claim for owner wallet " + ownerWalletAddress
+								+ " reason " + addedKeyTxReceipt.getStatus());
+						throw new Exception(addedKeyTxReceipt.getStatus());
+					}
+					// add claim...
+					final byte[] _claim = ipfsHashId.getBytes();// data to store
+					final byte[] _signature = new String(
+							ownerWalletAddress + BigInteger.ZERO.toString() + new String(_claim)).getBytes(); // this.address
+																												// +
+																												// topic
+																												// +
+																												// data
+					final TransactionReceipt claimAddedTxReceipt = novahemjo
 							.addClaim(BigInteger.ZERO/* type */, "refuge"/* issuer */,
 									BigInteger.ZERO/* signature type */, _signature, _claim, "ipfs://" + ipfsHashId)
 							.send();
 					LOGGER.log(Level.INFO,
 							"claim added for refuge is " + ((claimAddedTxReceipt.isStatusOK()) ? "ok" : "not ok"));
 					if (!claimAddedTxReceipt.isStatusOK()) {
-						LOGGER.log(Level.SEVERE, "failed creating document for owner wallet " + ownerWalletAddress
+						LOGGER.log(Level.SEVERE, "failed creating claim for owner wallet " + ownerWalletAddress
 								+ " reason " + claimAddedTxReceipt.getStatus());
 						throw new Exception(claimAddedTxReceipt.getStatus());
 					}
@@ -313,7 +331,6 @@ public class BlockchainFacade {
 				}
 				return null;
 			});
-
 			final BigInteger documentId = contract.getLatest().send();
 			return new Document(documentId, ipfsHashId);
 		}
@@ -353,6 +370,123 @@ public class BlockchainFacade {
 		throw new Exception("Can't get wallet file for " + ownerWalletAddress + ", contact admin.");
 	}
 
+	/**
+	 * 
+	 * @param ownerWalletAddress
+	 * @param documentId
+	 * @return
+	 * @throws Exception
+	 */
+	public Tuple4<BigInteger, byte[], String, String> getDocumentHistory(final String ownerWalletAddress,
+			final BigInteger documentId) throws Exception {
+		final File walletFile = new File(WALLETS_PATH + File.separator + ownerWalletAddress + ".json");
+		LOGGER.log(Level.INFO, "wallet of refuge " + walletFile.getAbsolutePath());
+		if (walletFile.exists() && walletFile.canRead()) {
+			String contractAddress = Main.ETHDOC_CONTRACT_ADDRESS_CLOUD;
+			Credentials credentials = WalletUtils.loadCredentials(NOVAHEMJO_COMMON_WALLET_PASSWORD, walletFile);
+			final EtherDoc contract = EtherDoc.load(contractAddress, web3j, credentials, NOVAHEMJO_GAS_PRICE,
+					NOVAHEMJO_GAS_LIMIT);
+			LOGGER.log(Level.INFO, "contract address - " + contract.getContractAddress());
+			LOGGER.log(Level.INFO, (contract.isValid()) ? "valid" : "invalid");
+			LOGGER.log(Level.INFO, "document id - " + documentId);
+			final Tuple4<BigInteger/* blocknumber */, byte[]/* hash */, String/* from */, String/* to */> tuple = contract
+					.getDocument(documentId).send();
+			return tuple;
+		}
+		throw new Exception("Can't get wallet file for " + ownerWalletAddress + ", contact admin.");
+	}
+
+	/**
+	 * 
+	 * @param ownerWalletAddress
+	 * @param refugeWalletAddress
+	 * @return
+	 * @throws Exception
+	 */
+	public Boolean addIssuerCredentials(final String ownerWalletAddress, final String refugeWalletAddress)
+			throws Exception {
+		final File walletFile = new File(WALLETS_PATH + File.separator + ownerWalletAddress + ".json");
+		LOGGER.log(Level.INFO, "wallet of issuer " + walletFile.getAbsolutePath());
+		if (walletFile.exists() && walletFile.canRead()) {
+			String contractAddress = Main.ERC725_CONTRACT_ADDRESS_CLOUD;
+			Credentials credentials = WalletUtils.loadCredentials(NOVAHEMJO_COMMON_WALLET_PASSWORD, walletFile);
+			final Novahemjo contract = Novahemjo.load(contractAddress, web3j, credentials, NOVAHEMJO_GAS_PRICE,
+					NOVAHEMJO_GAS_LIMIT);
+			LOGGER.log(Level.INFO, "contract address - " + contract.getContractAddress());
+			LOGGER.log(Level.INFO, (contract.isValid()) ? "valid" : "invalid");
+			// from wallet add key...optionally get from parameter as an RSA key...
+			final String issuerSignature = Hash.sha3(ownerWalletAddress);
+			final TransactionReceipt addIssuerKeyTx = contract.addKey(issuerSignature, BigInteger.ONE).send();
+			LOGGER.log(Level.INFO, "issuer key is " + ((addIssuerKeyTx.isStatusOK()) ? "ok" : "not ok"));
+			if (!addIssuerKeyTx.isStatusOK()) {
+				LOGGER.log(Level.SEVERE, "failed creating issuer key for owner wallet " + ownerWalletAddress
+						+ " reason " + addIssuerKeyTx.getStatus());
+				throw new Exception(addIssuerKeyTx.getStatus());
+			}
+			// now add the one from the refuge to parse claims...
+			final String refugeSignature = Hash.sha3(refugeWalletAddress);
+			final TransactionReceipt addRefugeKeyTx = contract.addKey(refugeSignature, BigInteger.ONE).send();
+			LOGGER.log(Level.INFO, "refuge key for issuer is " + ((addRefugeKeyTx.isStatusOK()) ? "ok" : "not ok"));
+			if (!addRefugeKeyTx.isStatusOK()) {
+				LOGGER.log(Level.SEVERE, "failed creating refuge key for issuer for owner wallet " + ownerWalletAddress
+						+ " reason " + addRefugeKeyTx.getStatus());
+				throw new Exception(addRefugeKeyTx.getStatus());
+			}
+			return Boolean.TRUE;
+		}
+		throw new Exception("Can't get wallet file for " + ownerWalletAddress + ", contact admin.");
+	}
+
+	/**
+	 * 
+	 * @param ownerWalletAddress
+	 * @param documentId
+	 * @param claimerId
+	 * @param claimType
+	 * @throws Exception
+	 */
+	public Boolean claimDocumentFromRefuge(final String ownerWalletAddress, final BigInteger documentId,
+			final String issuerWalletAddress) throws Exception {
+		final File walletFile = new File(WALLETS_PATH + File.separator + ownerWalletAddress + ".json");
+		LOGGER.log(Level.INFO, "wallet of refuge " + walletFile.getAbsolutePath());
+		if (walletFile.exists() && walletFile.canRead()) {
+			String contractAddress = Main.ETHDOC_CONTRACT_ADDRESS_CLOUD;
+			Credentials credentials = WalletUtils.loadCredentials(NOVAHEMJO_COMMON_WALLET_PASSWORD, walletFile);
+			final EtherDoc contract = EtherDoc.load(contractAddress, web3j, credentials, NOVAHEMJO_GAS_PRICE,
+					NOVAHEMJO_GAS_LIMIT);
+			LOGGER.log(Level.INFO, "contract address - " + contract.getContractAddress());
+			LOGGER.log(Level.INFO, (contract.isValid()) ? "valid" : "invalid");
+			LOGGER.log(Level.INFO, "document id - " + documentId);
+			final Tuple4<BigInteger/* blocknumber */, byte[]/* hash */, String/* from */, String/* to */> tuple = contract
+					.getDocument(documentId).send();
+			final Novahemjo novahemjo = Novahemjo.load(Main.ERC725_CONTRACT_ADDRESS_CLOUD, web3j, credentials,
+					NOVAHEMJO_GAS_PRICE, NOVAHEMJO_GAS_LIMIT);
+			LOGGER.log(Level.INFO, "contract address - " + novahemjo.getContractAddress());
+			LOGGER.log(Level.INFO, (novahemjo.isValid()) ? "valid" : "invalid");
+			final byte[] _claimId = tuple.getValue2();// ipfs hash
+			final Tuple6<BigInteger/* claim type */, String/* issuer */, BigInteger/* signature type */, byte[]/*
+																												 * signature
+																												 */, byte[]/*
+																															 * claim
+																															 */, String/*
+																																		 * uri
+																																		 */> refugeClaim = novahemjo
+					.getClaim(_claimId).send();
+			// check against claim issuers...for the moment approve it...
+			final TransactionReceipt claimApprovedTxReceipt = novahemjo.approve(_claimId, Boolean.TRUE).send();
+			LOGGER.log(Level.INFO,
+					"claim added for refuge is " + ((claimApprovedTxReceipt.isStatusOK()) ? "ok" : "not ok"));
+			if (!claimApprovedTxReceipt.isStatusOK()) {
+				LOGGER.log(Level.SEVERE, "failed creating claim for owner wallet " + ownerWalletAddress + " reason "
+						+ claimApprovedTxReceipt.getStatus());
+				throw new Exception(claimApprovedTxReceipt.getStatus());
+			}
+			return Boolean.TRUE;
+		}
+		return Boolean.FALSE;
+	}
+
+	//
 	private File getResourceAsFile(final String resourcePath) throws Exception {
 		InputStream in = null;
 		try {

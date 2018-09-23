@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
+
 import org.web3j.abi.EventEncoder;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Address;
@@ -28,6 +29,7 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tuples.generated.Tuple6;
 import org.web3j.tx.Contract;
 import org.web3j.tx.TransactionManager;
+
 import rx.Observable;
 import rx.functions.Func1;
 
@@ -115,15 +117,19 @@ public class Novahemjo extends Contract {
             Arrays.<TypeReference<?>>asList(new TypeReference<Bool>() {}));
     ;
 
-    protected Novahemjo(String contractAddress, Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
+    @SuppressWarnings("deprecation")
+	protected Novahemjo(String contractAddress, Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
         super(BINARY, contractAddress, web3j, credentials, gasPrice, gasLimit);
     }
 
+    @SuppressWarnings("deprecation")
     protected Novahemjo(String contractAddress, Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit) {
         super(BINARY, contractAddress, web3j, transactionManager, gasPrice, gasLimit);
     }
 
-    public RemoteCall<TransactionReceipt> addClaim(BigInteger _claimType, String _issuer, BigInteger _signatureType, byte[] _signature, byte[] _claim, String _uri) {
+    
+    @SuppressWarnings("rawtypes")
+	public RemoteCall<TransactionReceipt> addClaim(BigInteger _claimType, String _issuer, BigInteger _signatureType, byte[] _signature, byte[] _claim, String _uri) {
         final Function function = new Function(
                 FUNC_ADDCLAIM, 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_claimType), 
@@ -136,6 +142,7 @@ public class Novahemjo extends Contract {
         return executeRemoteCallTransaction(function);
     }
 
+    @SuppressWarnings("rawtypes")
     public RemoteCall<TransactionReceipt> addKey(String _key, BigInteger _type) {
         final Function function = new Function(
                 FUNC_ADDKEY, 
@@ -145,6 +152,7 @@ public class Novahemjo extends Contract {
         return executeRemoteCallTransaction(function);
     }
 
+    @SuppressWarnings("rawtypes")
     public RemoteCall<TransactionReceipt> approve(byte[] _id, Boolean _approve) {
         final Function function = new Function(
                 FUNC_APPROVE, 
@@ -326,6 +334,7 @@ public class Novahemjo extends Contract {
         return claimChangedEventObservable(filter);
     }
 
+    @SuppressWarnings("rawtypes")
     public RemoteCall<TransactionReceipt> execute(String _to, BigInteger _value, byte[] _data) {
         final Function function = new Function(
                 FUNC_EXECUTE, 
@@ -544,6 +553,7 @@ public class Novahemjo extends Contract {
         return approvedEventObservable(filter);
     }
 
+    @SuppressWarnings("rawtypes")
     public RemoteCall<TransactionReceipt> removeClaim(byte[] _claimId) {
         final Function function = new Function(
                 FUNC_REMOVECLAIM, 
@@ -552,6 +562,7 @@ public class Novahemjo extends Contract {
         return executeRemoteCallTransaction(function);
     }
 
+    @SuppressWarnings("rawtypes")
     public RemoteCall<TransactionReceipt> removeKey(String _key) {
         final Function function = new Function(
                 FUNC_REMOVEKEY, 
@@ -560,6 +571,7 @@ public class Novahemjo extends Contract {
         return executeRemoteCallTransaction(function);
     }
 
+    @SuppressWarnings("rawtypes")
     public RemoteCall<TransactionReceipt> replaceKey(String _oldKey, String _newKey) {
         final Function function = new Function(
                 FUNC_REPLACEKEY, 
@@ -577,6 +589,7 @@ public class Novahemjo extends Contract {
         return deployRemoteCall(Novahemjo.class, web3j, transactionManager, gasPrice, gasLimit, BINARY, "");
     }
 
+    @SuppressWarnings("rawtypes")
     public RemoteCall<Tuple6<BigInteger, String, BigInteger, byte[], byte[], String>> getClaim(byte[] _claimId) {
         final Function function = new Function(FUNC_GETCLAIM, 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(_claimId)), 
@@ -597,6 +610,7 @@ public class Novahemjo extends Contract {
                 });
     }
 
+    @SuppressWarnings("rawtypes")
     public RemoteCall<List> getClaimsIdByType(BigInteger _claimType) {
         final Function function = new Function(FUNC_GETCLAIMSIDBYTYPE, 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_claimType)), 
@@ -612,6 +626,7 @@ public class Novahemjo extends Contract {
                 });
     }
 
+    @SuppressWarnings("rawtypes")
     public RemoteCall<List> getKeysByType(BigInteger _type) {
         final Function function = new Function(FUNC_GETKEYSBYTYPE, 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_type)), 
@@ -627,6 +642,7 @@ public class Novahemjo extends Contract {
                 });
     }
 
+    @SuppressWarnings("rawtypes")
     public RemoteCall<BigInteger> getKeyType(String _key) {
         final Function function = new Function(FUNC_GETKEYTYPE, 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(_key)), 

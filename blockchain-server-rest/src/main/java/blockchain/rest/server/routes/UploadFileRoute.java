@@ -61,8 +61,8 @@ public class UploadFileRoute implements Route {
 	@ApiImplicitParams({ //
 			// @ApiImplicitParam(required = true, dataType = "string", name = "auth",
 			// paramType = "header"), //
-			@ApiImplicitParam(required = true, dataType = "string", name = "walletaddress", paramType = "path")//
-	}) //
+			@ApiImplicitParam(required = true, dataType = "string", name = "walletaddress", paramType = "path"), //
+			@ApiImplicitParam(required = true, dataType = "string", name = "type", paramType = "path") }) //
 	@ApiResponses(value = { //
 			@ApiResponse(code = 200, message = "Success", response = Document.class), //
 			@ApiResponse(code = 400, message = "Invalid input data", response = ApiError.class), //
@@ -70,7 +70,7 @@ public class UploadFileRoute implements Route {
 	})
 	@Override
 	public Object handle(Request request, Response response) throws Exception {
-		if (StringUtils.isEmpty(request.params("walletaddress"))) {
+		if (StringUtils.isEmpty(request.params("walletaddress")) || StringUtils.isEmpty(request.params("type"))) {
 			ApiError error = new ApiError();
 			error.setCode(2);
 			error.setMessage("Invalid input data");
@@ -110,7 +110,7 @@ public class UploadFileRoute implements Route {
 			final MerkleNode addResult = ipfs.add(file).get(0);
 			final String ipfsHashId = addResult.hash.toHex();
 			final Document document = BlockchainFacade.getInstance()
-					.uploadDocumentForRefuge(request.params("walletaddress"), ipfsHashId);
+					.uploadDocumentForRefuge(request.params("walletaddress"), request.params("type"), ipfsHashId);
 			response.status(200);
 			return mapper.writeValueAsString(document);
 		} catch (Exception e) {
