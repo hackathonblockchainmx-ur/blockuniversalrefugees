@@ -20,8 +20,19 @@ IPFS nodo privado.
 
 ## Instruciones
 
-Para poder compilar el proyecto se utiliza maven, en linea de comando se ejecuta lo sigiente
+Para poder compilar el proyecto se utiliza maven, en linea de comando se ejecuta lo sigiente en el directorio raiz del proyecto:
 
 ```
 mvn clean compile assembly:single
 ```
+
+Esto generara un archivo jar en el subdirectorio de target con el nombre de blockchain.rest.server-0.0.1-SNAPSHOT-jar-with-dependencies.jar
+
+Este jar es autoejecutable, para correrlo se llama el comando en linea de:
+
+```
+java -jar blockchain.rest.server-0.0.1-SNAPSHOT-jar-with-dependencies.jar
+```
+
+Por default buscara en el host actual por el nodo de la blockchain de ethereum en el puerto 7100 y por el nodo de IPFS privado local en el puerto 5100.
+El servicio REST se publicara por default en el puerto 4567 con el swagger ya publicado para ser consumido en la raiz del URL.
